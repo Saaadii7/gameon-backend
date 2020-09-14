@@ -1,0 +1,6 @@
+{
+  "watch": ["bin/*", "config/*", "src/*", "utils/*", "app.js"],
+  "ext": "js",
+  "ignore": ["node_modules/*"],
+  "delay": "150"
+}

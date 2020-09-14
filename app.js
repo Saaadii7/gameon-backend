@@ -4,8 +4,13 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const compression = require('compression');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+
+require('dotenv').config();
 
 var app = express();
 
@@ -13,14 +18,35 @@ var app = express();
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
-app.use(logger('dev'));
+logger.token('host', function(req, res) {
+  return req.hostname;
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10,
+  message:
+      'Too many accounts created from this IP, please try again after an hour'
+});
+
+app.use(logger(':method :host :url :status :res[content-length] - :response-time ms'));
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: false }));//json body setting
+app.use(bodyParser.json());
+app.use(helmet());
+app.use(cors());
+app.use(compression());
+app.use(apiLimiter);
+
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
+app.disable('x-powered-by');
+// app.use(passport.initialize());
+// app.use(passport.session());
+
+// app.use('/', indexRouter);
+// app.use('/users', usersRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
