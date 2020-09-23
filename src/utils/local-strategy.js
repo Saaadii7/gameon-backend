@@ -1,25 +1,26 @@
 const LocalStrategy = require('passport-local').Strategy;
+const userService = require('../services/user');
 
-module.exports = (passport, userService) => {
+module.exports = (passport) => {
     passport.use(
         new LocalStrategy(
             {
-                usernameField: 'email',
+                passReqToCallback: false,
                 passwordField: 'password',
                 session: true,
-                passReqToCallback: false
+                usernameField: 'email'
             },
             async (email, password, done) => {
-                let user = await userService.findByQuery({ email }).catch(done);
-                if (!user || !(await user.authenticate(password))) {
-                    return done(
-                        {
-                            name: 'Invalid credentials',
-                            message: 'Email or Password is incorrect.'
-                        },
-                        false
-                    );
-                }
+                const user = await userService.findWithAssosiations({
+                    email: email.toLowerCase()
+                }, true, ['role']).catch(done);
+
+                if (!user)
+                    return done('User Not Found', false);
+
+                if (!(await user.authenticate(password)))
+                    return done('Email or Password is incorrect.', false);
+
                 return done(null, user);
             }
         )
